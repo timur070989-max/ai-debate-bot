@@ -58,14 +58,16 @@ class DebateEngine:
     def _build_final_summary(self, state: DebateState) -> str:
         """Build a formatted summary of the debate (HTML-safe)."""
         task_escaped = html.escape(state.task)
-        agreed_text = "Da" if state.is_agreed else "Net (limit)"
+        agreed_text = "\u2705 \u0414\u0430" if state.is_agreed else "\u23f0 \u041d\u0435\u0442 (\u043b\u0438\u043c\u0438\u0442 \u0440\u0430\u0443\u043d\u0434\u043e\u0432)"
 
         lines = [
-            "<b>ITOG OBSUZHDENIYA</b>",
+            "\u2501" * 14,
+            "\U0001f4cb <b>\u0418\u0422\u041e\u0413 \u041e\u0411\u0421\u0423\u0416\u0414\u0415\u041d\u0418\u042f</b>",
+            "\u2501" * 14,
             "",
-            f"<b>Zadanie:</b> {task_escaped}",
-            f"<b>Raundov:</b> {state.round_num}",
-            f"<b>Soglasie:</b> {agreed_text}",
+            f"\U0001f4dd <b>\u0417\u0430\u0434\u0430\u043d\u0438\u0435:</b> {task_escaped}",
+            f"\U0001f504 <b>\u0420\u0430\u0443\u043d\u0434\u043e\u0432:</b> {state.round_num}",
+            f"\U0001f91d <b>\u0421\u043e\u0433\u043b\u0430\u0441\u0438\u0435:</b> {agreed_text}",
             "",
         ]
 
@@ -78,7 +80,7 @@ class DebateEngine:
                 break
 
         if agreement_msgs:
-            lines.append("<b>Final positions:</b>")
+            lines.append("<b>\u0424\u0438\u043d\u0430\u043b\u044c\u043d\u044b\u0435 \u043f\u043e\u0437\u0438\u0446\u0438\u0438:</b>")
             lines.append("")
             for msg in agreement_msgs:
                 lines.append(f"<b>{html.escape(msg.sender)}:</b>")
@@ -96,11 +98,11 @@ class DebateEngine:
                 if last_alpha and last_beta:
                     break
             if last_alpha:
-                lines.append(f"<b>Last position {html.escape(last_alpha.sender)}:</b>")
+                lines.append(f"<b>\u041f\u043e\u0441\u043b\u0435\u0434\u043d\u044f\u044f \u043f\u043e\u0437\u0438\u0446\u0438\u044f {html.escape(last_alpha.sender)}:</b>")
                 lines.append(html.escape(last_alpha.content[:500]))
                 lines.append("")
             if last_beta:
-                lines.append(f"<b>Last position {html.escape(last_beta.sender)}:</b>")
+                lines.append(f"<b>\u041f\u043e\u0441\u043b\u0435\u0434\u043d\u044f\u044f \u043f\u043e\u0437\u0438\u0446\u0438\u044f {html.escape(last_beta.sender)}:</b>")
                 lines.append(html.escape(last_beta.content[:500]))
                 lines.append("")
 
@@ -124,7 +126,7 @@ class DebateEngine:
         # Initial user message
         user_msg = Message(
             role="user",
-            sender="User",
+            sender="\U0001f464 \u041f\u043e\u043b\u044c\u0437\u043e\u0432\u0430\u0442\u0435\u043b\u044c",
             content=state.task,
         )
         state.messages.append(user_msg)

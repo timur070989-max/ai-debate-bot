@@ -87,10 +87,10 @@ class GroqAgent(BaseAgent):
                 temperature=0.7,
                 max_tokens=1024,
             )
-            return response.choices[0].message.content or "(empty response)"
+            return response.choices[0].message.content or "(пустой ответ)"
         except Exception as e:
             logger.error(f"Groq API error: {e}")
-            return f"Agent Alpha error (Groq): {e}"
+            return f"Ошибка Agent Alpha (Groq): {e}"
 
 
 class GeminiAgent(BaseAgent):
@@ -107,10 +107,10 @@ class GeminiAgent(BaseAgent):
 
     async def respond(self, conversation: list[Message]) -> str:
         # Build a single prompt from conversation history
-        prompt_parts = [self.system_prompt, "\n\n--- HISTORY ---\n"]
+        prompt_parts = [self.system_prompt, "\n\n--- ИСТОРИЯ ОБСУЖДЕНИЯ ---\n"]
         for msg in conversation:
             prompt_parts.append(f"[{msg.sender}]: {msg.content}")
-        prompt_parts.append(f"\nNow respond as [{self.display_name}]:")
+        prompt_parts.append(f"\nТеперь ответь как [{self.display_name}] на русском языке:")
 
         full_prompt = "\n".join(prompt_parts)
 
@@ -124,7 +124,7 @@ class GeminiAgent(BaseAgent):
                     max_output_tokens=1024,
                 ),
             )
-            return response.text or "(empty response)"
+            return response.text or "(пустой ответ)"
         except Exception as e:
             logger.error(f"Gemini API error: {e}")
-            return f"Agent Beta error (Gemini): {e}"
+            return f"Ошибка Agent Beta (Gemini): {e}"
