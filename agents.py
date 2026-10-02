@@ -6,6 +6,7 @@ Both use async interfaces for proper non-blocking operation.
 from __future__ import annotations
 
 import logging
+import re
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 
@@ -16,6 +17,18 @@ from google.genai import types as genai_types
 import config
 
 logger = logging.getLogger(__name__)
+
+_THINK_RE = re.compile(r"<think>.*?</think>\s*", re.DOTALL | re.IGNORECASE)
+
+
+class AgentError(RuntimeError):
+    """An LLM call failed; the debate must stop instead of treating the error
+    text as the agent's argument (which the other agent would then answer)."""
+
+
+def strip_reasoning(text: str) -> str:
+    """Qwen3 reasoning models may prepend a <think>...</think> block."""
+    return _THINK_RE.sub("", text or "").strip()
 
 
 @dataclass
@@ -87,10 +100,10 @@ class GroqAgent(BaseAgent):
                 temperature=0.7,
                 max_tokens=1024,
             )
-            return response.choices[0].message.content or "(пустой ответ)"
         except Exception as e:
             logger.error(f"Groq API error: {e}")
-            return f"Ошибка Agent Alpha (Groq): {e}"
+            raise AgentError(f"Agent Alpha (Groq) недоступен: {e}") from e
+        return strip_reasoning(response.choices[0].message.content) or "(пустой ответ)"
 
 
 class GeminiAgent(BaseAgent):
@@ -124,7 +137,7 @@ class GeminiAgent(BaseAgent):
                     max_output_tokens=1024,
                 ),
             )
-            return response.text or "(пустой ответ)"
         except Exception as e:
             logger.error(f"Gemini API error: {e}")
-            return f"Ошибка Agent Beta (Gemini): {e}"
+            raise AgentError(f"Agent Beta (Gemini) недоступен: {e}") from e
+        return (response.text or "").strip() or "(пустой ответ)"

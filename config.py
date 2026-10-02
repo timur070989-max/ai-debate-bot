@@ -19,13 +19,22 @@ GEMINI_MODEL: str = "gemini-3.6-flash"
 
 # ── Debate Settings ───────────────────────────────────────
 MAX_ROUNDS: int = int(os.getenv("MAX_ROUNDS") or "8")
+# An agent signals agreement by STARTING a line with one of these markers and
+# a colon (the prompts ask for "ИТОГ:"). Plain substring matching used to end
+# debates early on phrases like "я не согласен" or "в итоге".
 AGREEMENT_MARKERS: list[str] = [
-    "AGREED",
-    "СОГЛАСЕН",
-    "CONSENSUS",
-    "КОНСЕНСУС",
     "ИТОГ",
+    "КОНСЕНСУС",
+    "AGREED",
+    "CONSENSUS",
 ]
+
+# Comma-separated Telegram user IDs allowed to use the bot. Every debate costs
+# up to 2 x MAX_ROUNDS LLM calls, so an open bot lets anyone spend the quotas.
+# Empty = open to everyone (a warning is printed on startup).
+ALLOWED_USER_IDS: set[int] = {
+    int(x) for x in os.getenv("ALLOWED_USER_IDS", "").replace(" ", "").split(",") if x.isdigit()
+}
 
 # ── Agent Personalities (System Prompts) ──────────────────
 

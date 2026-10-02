@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import html
 import logging
+import re
 from dataclasses import dataclass, field
 from typing import Callable, Awaitable
 
@@ -14,6 +15,13 @@ from agents import BaseAgent, Message
 import config
 
 logger = logging.getLogger(__name__)
+
+# Marker at the start of a line, optionally wrapped in markdown (**ИТОГ:**,
+# "### ИТОГ:", "- ИТОГ:"), followed by a colon.
+_AGREEMENT_RE = re.compile(
+    r"^[\s>#*_\-]*(?:" + "|".join(re.escape(m) for m in config.AGREEMENT_MARKERS) + r")[\s*_]*:",
+    re.IGNORECASE | re.MULTILINE,
+)
 
 
 @dataclass
@@ -52,8 +60,7 @@ class DebateEngine:
 
     def _check_agreement(self, text: str) -> bool:
         """Check if a message contains agreement markers."""
-        text_upper = text.upper()
-        return any(marker.upper() in text_upper for marker in config.AGREEMENT_MARKERS)
+        return bool(_AGREEMENT_RE.search(text or ""))
 
     def _build_final_summary(self, state: DebateState) -> str:
         """Build a formatted summary of the debate (HTML-safe)."""
@@ -74,7 +81,7 @@ class DebateEngine:
         # Find the last agreement message(s)
         agreement_msgs = []
         for msg in reversed(state.messages):
-            if self._check_agreement(msg.content):
+            if msg.role != "user" and self._check_agreement(msg.content):
                 agreement_msgs.insert(0, msg)
             if len(agreement_msgs) >= 2:
                 break

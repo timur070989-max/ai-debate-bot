@@ -339,6 +339,23 @@ async def handle_user_message(update: Update, context: ContextTypes.DEFAULT_TYPE
         )
 
 
+async def cmd_denied(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Reply to users who are not in ALLOWED_USER_IDS."""
+    user = update.effective_user
+    if not update.effective_chat or not user:
+        return
+    logger.info(f"Access denied for user {user.id}")
+    await safe_send(
+        context.bot, update.effective_chat.id,
+        f"\u26d4 \u0414\u043e\u0441\u0442\u0443\u043f \u043e\u0433\u0440\u0430\u043d\u0438\u0447\u0435\u043d. "
+        f"\u0412\u0430\u0448 ID: <code>{user.id}</code>",
+    )
+
+
+async def on_error(update: object, context: ContextTypes.DEFAULT_TYPE) -> None:
+    logger.error("Unhandled error while processing an update", exc_info=context.error)
+
+
 # ── Main ─────────────────────────────────────────────────
 
 def main() -> None:
@@ -359,13 +376,22 @@ def main() -> None:
 
     app = ApplicationBuilder().token(config.TELEGRAM_BOT_TOKEN).build()
 
-    app.add_handler(CommandHandler("start", cmd_start))
-    app.add_handler(CommandHandler("task", cmd_task))
-    app.add_handler(CommandHandler("stop", cmd_stop))
-    app.add_handler(CommandHandler("history", cmd_history))
-    app.add_handler(CommandHandler("rounds", cmd_rounds))
-    app.add_handler(CommandHandler("status", cmd_status))
-    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_user_message))
+    if config.ALLOWED_USER_IDS:
+        allowed = filters.User(user_id=config.ALLOWED_USER_IDS)
+    else:
+        allowed = filters.ALL
+        print("[WARN] ALLOWED_USER_IDS is empty: anyone on Telegram can start debates and spend your API quotas.")
+
+    app.add_handler(CommandHandler("start", cmd_start, filters=allowed))
+    app.add_handler(CommandHandler("task", cmd_task, filters=allowed))
+    app.add_handler(CommandHandler("stop", cmd_stop, filters=allowed))
+    app.add_handler(CommandHandler("history", cmd_history, filters=allowed))
+    app.add_handler(CommandHandler("rounds", cmd_rounds, filters=allowed))
+    app.add_handler(CommandHandler("status", cmd_status, filters=allowed))
+    app.add_handler(MessageHandler(allowed & filters.TEXT & ~filters.COMMAND, handle_user_message))
+    # Anyone else gets their ID so the owner can add them to ALLOWED_USER_IDS.
+    app.add_handler(MessageHandler(~allowed, cmd_denied))
+    app.add_error_handler(on_error)
 
     print("[OK] Bot is running! Send /start in Telegram.")
     app.run_polling(drop_pending_updates=True)
